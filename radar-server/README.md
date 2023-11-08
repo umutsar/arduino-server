@@ -1,4 +1,5 @@
 # Arduino radar-server.
 
-It not ready yet. 
+It is not ready yet. 
+
 Please wait my contributes. Keep following..
