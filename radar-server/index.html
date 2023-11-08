@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+   <head>
+      <style>
+         body {
+            margin: 0;
+            padding: 0;
+         }
+
+         #radar {
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+         }
+
+         #radarjpg {
+            z-index: 0;
+            position: absolute;
+            width: 900px;
+            top: calc(50vh - 450px);
+            left: calc(50vw - 450px);
+         }
+         #scan {
+            width: 415px;
+            margin-left: 100vh;
+            height: 5px;
+            border-radius: 8px;
+            background-color: red;
+            position: absolute;
+            top: 50%;
+            left: 0;
+            transform-origin: 0% 50%;
+            transform: rotate(0deg);
+         }
+         #myCanvas {
+            z-index: 1;
+            position: absolute;
+            margin: 0;
+            padding: 0;
+            top: calc(50vh - 450px);
+            left: calc(50vw - 450px);
+         }
+      </style>
+   </head>
+   <body>
+      <canvas id="myCanvas" width="900" height="900"></canvas>
+      <span id="radarDistance"></span>
+      <img id="radarjpg" src="./radar.jpg" />
+      <div id="radar">
+         <div id="scan"></div>
+      </div>
+
+      <script>
+         const socket = new WebSocket("ws://192.168.0.241:8766");
+         const radarDistance = document.getElementById("radarDistance");
+         const scan = document.getElementById("scan");
+
+         let value = 0;
+         let rotateInterval;
+
+         socket.addEventListener("open", (event) => {
+            console.log("WebSocket bağlantısı başarıyla kuruldu.");
+         });
+
+         socket.addEventListener("message", (event) => {
+            // var data = event.data;
+
+            radarDistance.innerText = `${data}`;
+         });
+
+         socket.addEventListener("close", (event) => {
+            console.log("WebSocket bağlantısı kapandı.");
+         });
+
+         socket.addEventListener("error", (event) => {
+            console.error("WebSocket hatası:", event);
+         });
+
+         // ***************************************************************
+
+         const canvas = document.getElementById("myCanvas");
+         const context = canvas.getContext("2d");
+
+         // Koordinatlar ve daire özellikleri
+         const radius = 20; // Yarıçap
+         const color = "red"; // Daire rengi
+
+         // Dairenin çizimi
+
+         function hesapKitap() {
+            var data =
+               Math.floor(Math.random() * 181).toString() +
+               "," +
+               Math.floor(Math.random() * 41).toString();
+            console.log(`Arduino'dan gelen veri: ${data}`);
+            var splittedData = data.split(",");
+            var alinanDerece = 180 - parseInt(splittedData[0]);
+            var alinanMesafe = parseInt(splittedData[1]);
+            var c = alinanMesafe * 10.3;
+
+            var a = Math.floor(c * Math.abs(Math.cos(alinanDerece)));
+            var b = Math.floor(Math.abs(c * Math.sin(alinanDerece)));
+            console.log(b)
+            var x = 415 - a;
+            var y = 415 - b;
+            context.beginPath();
+            context.arc(x, y, radius, 0, 2 * Math.PI, false);
+            context.fillStyle = color;
+            context.fill();
+            context.stroke();
+         }
+         hesapKitap();
+
+         function rotateBack() {
+            rotateInterval = setInterval(() => {
+               value += 1;
+               scan.style.transform = `rotate(${value}deg)`;
+
+               if (value == 0) {
+                  clearInterval(rotateInterval);
+                  rotateScan();
+               }
+            }, 15);
+         }
+
+         function rotateScan() {
+            rotateInterval = setInterval(() => {
+               value -= 1;
+               scan.style.transform = `rotate(${value}deg)`;
+
+               if (value == -180) {
+                  clearInterval(rotateInterval);
+                  rotateBack();
+               }
+            }, 15);
+         }
+
+         rotateScan();
+
+         scan.style.transform = `rotate(-120deg)`;
+      </script>
+   </body>
+</html>
